@@ -711,3 +711,27 @@ class Index(nn.Module):
             (torch.Tensor): Selected tensor.
         """
         return x[self.index]
+
+from ultralytics.nn.modules.attention_modules import CBAM, SEBlock, ECA, BAM
+
+class AttentionConv(nn.Module):
+    def __init__(self, in_channels, out_channels, attention_type='CBAM'):
+        super(AttentionConv, self).__init__()
+        self.conv = nn.Conv2d(in_channels, out_channels, 3, padding=1, bias=False)
+        self.bn = nn.BatchNorm2d(out_channels)
+        self.act = nn.ReLU()
+        if attention_type == 'CBAM':
+            self.attn = CBAM(out_channels)
+        elif attention_type == 'SE':
+            self.attn = SEBlock(out_channels)
+        elif attention_type == 'ECA':
+            self.attn = ECA(out_channels)
+        elif attention_type == 'BAM':
+            self.attn = BAM(out_channels)
+        else:
+            raise ValueError("Unsupported attention type")
+
+    def forward(self, x):
+        x = self.act(self.bn(self.conv(x)))
+        x = self.attn(x)
+        return x
